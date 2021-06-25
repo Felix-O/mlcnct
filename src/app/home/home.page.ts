@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { AngularFireFunctions } from '@angular/fire/functions';
-import { stringify } from 'querystring';
 
 @Component({
   selector: 'app-home',
@@ -9,7 +8,9 @@ import { stringify } from 'querystring';
 })
 export class HomePage {
 
-  constructor(private fns: AngularFireFunctions) {}
+  constructor(
+    private fns: AngularFireFunctions,
+  ) {}
 
   public dates:any = [
     {date:""}
@@ -17,13 +18,37 @@ export class HomePage {
 
   public p:any = {}
 
+  remove(i?) {
+    let l = this.dates.length
+    if(l > 1)
+      this.dates.splice((i||l-1), 1)
+  }
+
+  add() {
+    this.dates.push({date:""})
+  }
+
+  form(){
+    return this.dates.reduce((o, d) => ({
+        ...o, [d.date]: (this.p[d.date]).replace(' ', '').split(',')
+    }), {})
+  }
+
   async send() {
-    let s = this.fns.httpsCallable('send_poundages');
-    await s(this.p).toPromise();
+    const pld = this.form();
+    const s = this.fns.httpsCallable('send_poundages');
+    let {r, err} = await s(pld).toPromise();
+    if(r){
+        this.dates = [
+            {date:""}
+        ]
+        this.p = {}
+    }
+    alert((r)?"Success":"Error")
   }
 
   show() {
-    let pld = this.dates.reduce((o, d) => ({ ...o, [d.date]: this.p[d.date]}), {})
+    let pld = this.form()
     alert(JSON.stringify(pld))
   }
 
